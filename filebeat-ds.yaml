@@ -63,13 +63,14 @@ data:
       providers:
       - type: kubernetes
         templates:
-          - condition:
-              equals:
+          - condition.equals:
                 kubernetes.namespace: "kube*"
             config:
               - type: container
                 paths:
                   - /var/log/containers/*-${data.kubernetes.container.id}.log
+                exclude_files:
+                  - filebeat-.*\.log
     processors:
       - add_kubernetes_metadata:
  
