@@ -65,7 +65,7 @@ data:
         templates:
           - condition:
               equals:
-                kubernetes.namespace: kube-system
+                kubernetes.namespace: "kube*"
             config:
               - type: container
                 paths:
@@ -78,20 +78,20 @@ data:
 
     output.logstash:
       hosts: ['logstash-service:5044']
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: filebeat-prospectors
-  namespace: kube-system
-  labels:
-    k8s-app: filebeat
-    kubernetes.io/cluster-service: "true"
-data:
-  kubernetes.yml: |-
-    - type: docker
-      containers.ids:
-      - "*"
+#---
+#apiVersion: v1
+#kind: ConfigMap
+#metadata:
+#  name: filebeat-prospectors
+#  namespace: kube-system
+#  labels:
+#    k8s-app: filebeat
+#    kubernetes.io/cluster-service: "true"
+#data:
+#  kubernetes.yml: |-
+#    - type: docker
+#      containers.ids:
+#      - "*"
 #  processors:
 #    - add_kubernetes_metadata:
 #        in_cluster: true
