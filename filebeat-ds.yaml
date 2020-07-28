@@ -48,34 +48,33 @@ metadata:
     kubernetes.io/cluster-service: "true"
 data:
   filebeat.yml: |-
-    filebeat.config:
-      prospectors:
-        # Mounted `filebeat-prospectors` configmap:
-        path: ${path.config}/prospectors.d/*.yml
-        # Reload prospectors configs as they change:
-        reload.enabled: false
-      modules:
-        path: ${path.config}/modules.d/*.yml
-        # Reload module configs as they change:
-        reload.enabled: false
-    
     filebeat.autodiscover:
       providers:
       - type: kubernetes
+        hints.enabled: true
         templates:
-          - condition.equals:
-                kubernetes.namespace: "kube*"
+          - condition:
+              equals:
+                kubernetes.namespace: "*"
             config:
               - type: container
                 paths:
-                  - /var/log/containers/*-${data.kubernetes.container.id}.log
+                  - /var/lib/docker/containers/*-${data.kubernetes.container.id}.log
                 exclude_files:
-                  - filebeat-.*\.log
-                multiline.pattern: '^[[:space:]]|^\!'
-                multiline.negate: false
-                multiline.match: after
+                  - logstash.*\.log
     processors:
       - add_kubernetes_metadata:
+      - drop_event:
+                 when:
+                   or: 
+                     - not.contains:
+                         kubernetes.namespace: "cicd"
+                     - contains:
+                         kubernetes.container.name: "weave-npc"
+                     - contains:
+                         kubernetes.container.name: "logstash"
+                     - contains:
+                         kubernetes.namespace: "default"
  
     cloud.id: ${ELASTIC_CLOUD_ID}
     cloud.auth: ${ELASTIC_CLOUD_AUTH}
@@ -96,9 +95,6 @@ data:
 #    - type: docker
 #      containers.ids:
 #      - "*"
-#  processors:
-#    - add_kubernetes_metadata:
-#        in_cluster: true
 
 ---
 apiVersion: apps/v1
