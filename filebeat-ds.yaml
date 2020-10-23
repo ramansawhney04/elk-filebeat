@@ -65,16 +65,22 @@ data:
               - type: container
                 paths:
                   - /var/log/containers/*-${data.kubernetes.container.id}.log
-                multiline.pattern: '^[[:space:]]|^\!'
+                pipeline: "message-transformer-pipeline"
+                multiline.type: pattern
+                multiline.pattern: '^[[:space:]]'
                 multiline.negate: false
                 multiline.match: after
-                pipeline: "message-transformer-pipeline"
     processors:
       - add_kubernetes_metadata:
+          in_cluster: true
       - drop_event:
                  when:
-                      not.contains:
-                        kubernetes.namespace: "cicd"
+                   or:
+                     - contains:
+                         kubernetes.namespace: "xyz"
+                     - contains:
+                         kubernetes.namespace: "default"
+      - add_cloud_metadata:
  
     cloud.id: ${ELASTIC_CLOUD_ID}
     cloud.auth: ${ELASTIC_CLOUD_AUTH}
@@ -158,6 +164,9 @@ spec:
         - name: varlibdockercontainers
           mountPath: /var/lib/docker/containers
           readOnly: true
+        - name: varlog
+          mountPath: /var/log/
+          readOnly: true
       volumes:
       - name: config
         configMap:
@@ -166,6 +175,9 @@ spec:
       - name: varlibdockercontainers
         hostPath:
           path: /var/lib/docker/containers
+      - name: varlog
+        hostPath:
+          path: /var/log/
       - name: prospectors
         configMap:
           defaultMode: 0600
